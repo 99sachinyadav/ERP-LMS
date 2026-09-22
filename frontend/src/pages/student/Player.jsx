@@ -11,6 +11,16 @@ import { toast } from "react-toastify";
 import Loading from "../../components/student/Loading";
  
 
+const getYouTubeId = (url) => {
+  if (!url) return "";
+  const match = String(url).match(
+    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/
+  );
+  if (match && match[1]) return match[1];
+  const cleaned = String(url).split("?")[0].split("/").pop();
+  return cleaned || "";
+};
+
 const Player = () => {
   const { enrolledCourses, calculateChapterTime ,backendUrl ,getToken,userData,
     fetchUserEnrolledCources
@@ -21,15 +31,12 @@ const Player = () => {
   const [playerData, setplayerData] = useState(null);
   const [progressData, setprogressData] = useState(null)
   const [initialRating, setinitialRating] = useState(0)
+
+  useEffect(() => {
+    console.log("Current playerData state:", playerData);
+  }, [playerData]);
   const [showNotes, setShowNotes] = useState(true);
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
-  const [showAiAssistant, setShowAiAssistant] = useState(false);
-  const [aiQuestion, setAiQuestion] = useState("");
-  const [aiAnswer, setAiAnswer] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiFile, setAiFile] = useState(null);
-  const [aiDisplayAnswer, setAiDisplayAnswer] = useState("");
-  const aiAnswerBoxRef = useRef(null);
   const [languageByQuestion, setLanguageByQuestion] = useState({});
   const [codeByQuestion, setCodeByQuestion] = useState({});
   const [stdinByQuestion, setStdinByQuestion] = useState({});
@@ -302,29 +309,6 @@ const handleDownloadNotes = async () => {
     getCourseProgress();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  useEffect(() => {
-    if (!aiAnswer) {
-      setAiDisplayAnswer("");
-      return;
-    }
-    let index = 0;
-    setAiDisplayAnswer("");
-    const interval = setInterval(() => {
-      index += 1;
-      setAiDisplayAnswer(aiAnswer.slice(0, index));
-      if (index >= aiAnswer.length) {
-        clearInterval(interval);
-      }
-    }, 15);
-    return () => clearInterval(interval);
-  }, [aiAnswer]);
-
-  useEffect(() => {
-    if (aiAnswerBoxRef.current) {
-      aiAnswerBoxRef.current.scrollTop = aiAnswerBoxRef.current.scrollHeight;
-    }
-  }, [aiDisplayAnswer]);
 
   const selectedQuestion = courseData?.isProgrammingCourse
     ? getSelectedQuestion()
@@ -612,12 +596,18 @@ const handleDownloadNotes = async () => {
         {/* right column */}
         <div className="md:mt-10 space-y-6">
           <div>
-                {playerData ? (
+            {playerData ? (
               <div>
-                <YouTube
-                  videoId={playerData.lectureUrl.split("/").pop()}
-                  iframeClassName="w-full aspect-video"
-                />
+                {getYouTubeId(playerData.lectureUrl) ? (
+                  <YouTube
+                    videoId={getYouTubeId(playerData.lectureUrl)}
+                    iframeClassName="w-full aspect-video"
+                  />
+                ) : (
+                  <div className="w-full aspect-video bg-slate-900 flex items-center justify-center text-slate-300 text-sm rounded">
+                    Invalid or missing video URL
+                  </div>
+                )}
                 <div className="flex justify-between items-center mt-1">
                   <p>
                     {" "}
@@ -629,108 +619,10 @@ const handleDownloadNotes = async () => {
                   </button>
                 </div>
               </div>
-            ) : (
-              <img src={courseData ? courseData.courseThumbnail : ""} alt="" />
-            )}
+            ) : courseData?.courseThumbnail ? (
+              <img src={courseData.courseThumbnail} alt={courseData.courseTitle || "Course Thumbnail"} />
+            ) : null}
           </div>
-
-          {showAiAssistant && (
-                  <div className="mt-4 border border-slate-200 rounded-xl bg-white p-3 text-xs max-h-96 md:max-h-[28rem] overflow-hidden flex flex-col">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-semibold text-slate-800 text-sm">AI Helper</p>
-                      <span className="text-[10px] text-slate-500">
-                        Debug code & ask study questions
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 mb-2">
-                      Ask course-related programming questions or paste code you want to debug.
-                      Files (image/PDF) will be sent along with your question.
-                    </p>
-                    <textarea
-                      value={aiQuestion}
-                      onChange={(e) => setAiQuestion(e.target.value)}
-                      spellCheck={false}
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      className="w-full border border-slate-300 rounded-md text-sm p-2 min-h-[140px] outline-none focus:outline-none focus:ring-0"
-                      placeholder="Describe your bug or ask a question about this lecture or your code..."
-                    />
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <label className="text-[11px] text-slate-600 cursor-pointer">
-                        <span className="px-2 py-1 rounded border border-slate-200 bg-slate-50 mr-1">
-                          Attach image/PDF
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*,application/pdf"
-                          className="hidden"
-                          onChange={(e) => setAiFile(e.target.files?.[0] || null)}
-                        />
-                      </label>
-                      {aiFile && (
-                        <span className="text-[10px] text-slate-500 truncate max-w-[120px]">
-                          {aiFile.name}
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (!aiQuestion.trim()) return;
-                          try {
-                            setAiLoading(true);
-                            setAiAnswer("");
-                            const token = await getToken();
-                            const formData = new FormData();
-                            formData.append("message", aiQuestion);
-                            if (selectedQuestion) {
-                              const lang = getSelectedLanguage(selectedQuestion);
-                              const codeKey = getCodeKey(selectedQuestion.questionId, lang);
-                              const code = codeByQuestion[codeKey] || "";
-                              formData.append("language", lang);
-                              formData.append("code", code);
-                            }
-                            formData.append("courseId", courseId);
-                            if (aiFile) {
-                              formData.append("attachment", aiFile);
-                            }
-                            const { data } = await axios.post(
-                              `${backendUrl}/api/user/ai/chat`,
-                              formData,
-                              {
-                                headers: {
-                                  Authorization: `Bearer ${token}`,
-                                },
-                              },
-                            );
-                            if (!data.success) {
-                              toast.error(data.message || "AI assistant error");
-                            }
-                            setAiAnswer(data.reply || "");
-                            if (data.success && data.reply) {
-                              setAiQuestion("");
-                            }
-                          } catch (error) {
-                            toast.error(error.message || "Failed to contact AI assistant");
-                          } finally {
-                            setAiLoading(false);
-                          }
-                        }}
-                        disabled={!aiQuestion.trim() || aiLoading}
-                        className="px-4 py-1.5 rounded bg-blue-600 text-white text-xs disabled:opacity-60"
-                      >
-                        {aiLoading ? "Asking..." : "Ask AI"}
-                      </button>
-                    </div>
-                    {aiDisplayAnswer && (
-                      <div
-                        ref={aiAnswerBoxRef}
-                        className="mt-3 border border-slate-200 rounded bg-slate-50 p-2 text-sm max-h-80 overflow-auto whitespace-pre-wrap"
-                      >
-                        {aiDisplayAnswer}
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {playerData && playerData.lectureNotesUrl && (
                 
@@ -771,14 +663,6 @@ const handleDownloadNotes = async () => {
 
 
         </div>
-      <button
-        type="button"
-        onClick={() => setShowAiAssistant((prev) => !prev)}
-        className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-20 rounded-full   h-28 w-28  md:w-32 md:h-32 flex items-center justify-center text-xs md:text-sm"
-      >
-        <img className="h-full w-full rounded-full" src={assets.AI2}/>
-
-      </button>
       <Footer />
     </>
   ) : <Loading />;

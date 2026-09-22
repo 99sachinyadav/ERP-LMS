@@ -11,8 +11,6 @@ const AddCourse = () => {
   const editorRef = useRef(null);
 
   const [courseTitle, setCourseTitle] = useState("");
-  const [coursePrice, setcoursePrice] = useState(0);
-  const [discount, setdiscount] = useState(0);
   const [image, setimage] = useState(null);
   const [chapters, setchapters] = useState([]);
   const [showChapterPopup, setShowChapterPopup] = useState(false);
@@ -124,6 +122,15 @@ const AddCourse = () => {
   const handleNotesFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate 2 MB file size limit
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("Notes file size cannot exceed 2 MB");
+      e.target.value = "";
+      return;
+    }
+
     setNotesUploading(true);
     try {
       const formData = new FormData();
@@ -141,7 +148,7 @@ const AddCourse = () => {
         toast.error(data.message || "Upload failed");
       }
     } catch (err) {
-      toast.error(err.message || "Failed to upload notes");
+      toast.error(err.response?.data?.message || err.message || "Failed to upload notes");
     } finally {
       setNotesUploading(false);
       e.target.value = "";
@@ -184,8 +191,6 @@ try {
       const courseData ={
         courseTitle,
         courseDescription:quillRef.current.root.innerHTML,
-        coursePrice:Number(coursePrice),
-        discount:Number(discount),
         courseContent:chapters,
         isPublished:true,
         isProgrammingCourse,
@@ -207,8 +212,6 @@ try {
       if(data.sucess){
         toast.success(data.message)
         setCourseTitle('')
-        setcoursePrice(0)
-        setdiscount(0)
         setimage(null)
         setchapters([])
         quillRef.current.root.innerHTML =""
@@ -254,52 +257,23 @@ try {
           <div ref={editorRef}></div>
         </div>
 
-        <div className="flex items-center justify-between flex-wrap">
-          <div className="flex flex-col gap-1">
-            <p>Course Price</p>
-            <input
-              onChange={(e) => setcoursePrice(e.target.value)}
-              value={coursePrice}
-              type="number"
-              placeholder="0"
-              className="outline-none
-                 md:py-2.5 py-2 w-28 px-3 rounded border border-gray-500"
-              required
+        <div className="flex md:flex-row flex-col items-start gap-3">
+          <p>Course Thumbnail</p>
+          <label htmlFor="thumbnailImage" className="flex items-center gap-3 cursor-pointer">
+            <img
+              src={assets.file_upload_icon}
+              alt=""
+              className="p-3 bg-blue-500 rounded"
             />
-          </div>
-
-          <div className="flex md:flex-row flex-col items-center gap-3">
-            <p>Course Thumbnail</p>
-            <label htmlFor="thumbnailImage" className="flex items-center gap-3">
-              <img
-                src={assets.file_upload_icon}
-                alt=""
-                className="p-3 bg-blue-500 rounded"
-              />
-              <input
-                type="file"
-                id="thumbnailImage"
-                onChange={(e) => setimage(e.target.files[0])}
-                accept="image/*"
-                hidden
-              />
-              <img src={image ? URL.createObjectURL(image) : null} alt="" />
-            </label>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <p>Discount %</p>
-          <input
-            onChange={(e) => setdiscount(e.target.value)}
-            value={discount}
-            type="number"
-            placeholder="0"
-            min={0}
-            max={100}
-            className="outline-none md:py-2.5 py-2 w-28 px-3 rounded border border-gray-500"
-            required
-          />
+            <input
+              type="file"
+              id="thumbnailImage"
+              onChange={(e) => setimage(e.target.files[0])}
+              accept="image/*"
+              hidden
+            />
+            <img className="max-h-14 object-contain rounded" src={image ? URL.createObjectURL(image) : null} alt="" />
+          </label>
         </div>
 
         <div className="flex items-center gap-3">
@@ -593,6 +567,7 @@ try {
                   onChange={handleNotesFileChange}
                   disabled={notesUploading}
                 />
+                <span className="text-xs text-gray-400 block mt-1">Maximum file size: 2 MB</span>
                 {notesUploading && <span className="text-sm text-gray-500">Uploading…</span>}
                 {lectureDetails.lectureNotesUrl && (
                   <span className="text-sm text-green-600 block mt-1">Notes attached</span>

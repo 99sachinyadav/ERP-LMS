@@ -6,20 +6,30 @@ import CourseCard from "./CourseCard";
 const CourseSection = () => {
    const {allCourses} = useContext(AppContext);
   return (
-    <div className="py-16 md:px-40 px-8 w-full">
-      <h2 className="text-3xl font-medium text-gray-800">Learn from the best</h2>
-      <p className="text-sm md-text-base text-gray-500 mt-3">
-        Discover our top-rated courses accross various cateegories . From
-        coading and design to <br/> buisness adn wellness ,our courses are crafted to
-        deliver results.
-      </p>
-        <div className="grid grid-cols-auto  px-4 md:px-0 md:my-16 my-10 gap-4">
+    <section className="w-full bg-slate-50 py-12 sm:py-14 lg:py-16">
+      <div className="mx-auto max-w-7xl px-5 text-left sm:px-8 lg:px-10">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-950 sm:text-3xl">Popular Courses</h2>
+            <p className="mt-2 text-sm text-slate-500">
+              Explore in-demand courses and start learning today.
+            </p>
+          </div>
+          <Link
+            to={"/course-list"}
+            onClick={() => scrollTo(0, 0)}
+            className="text-sm font-semibold text-blue-700 hover:text-blue-800"
+          >
+            View All Courses
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
            {
             allCourses.slice(0,4).map((course,index)=> <CourseCard key={index} course={course}/>    )
            }
         </div>
-      <Link  to={'/course-list'} onClick={()=>scrollTo(0,0)} className=" text-gray-500 border border-gray-500/30 px-10 py-3 rounded"> Show all courses</Link>
-    </div>
+      </div>
+    </section>
   );
 };
 

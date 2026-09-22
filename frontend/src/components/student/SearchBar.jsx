@@ -13,10 +13,10 @@ const SearchBar = ({data}) => {
   }
   return (
     
-       <form action="" onSubmit={onSearchHandler} className='max-w-xl w-full md:h-14 h-12 flex items-center bg-white border border-gray-500/20 rounded'>
-         <img src={assets.search_icon} alt="Search Icon" className='md:w-auto w-10 px-3' />
-         <input value={input} onChange={e=>setInput(e.target.value)} type="text"  placeholder='Search for courses' className='w-full h-full outline-none text-gray-500/80'  />
-         <button type='submit' className='bg-blue-600 rounded text-white md:px-10 px-7 md:py-3 py-2 mx-1' >Search</button>
+       <form action="" onSubmit={onSearchHandler} className='flex h-12 w-full max-w-xl items-center rounded-full border border-slate-200 bg-white px-3 shadow-sm transition-colors focus-within:border-blue-300 sm:px-4'>
+         <img src={assets.search_icon} alt="Search Icon" className='h-4 w-4 opacity-70' />
+         <input value={input} onChange={e=>setInput(e.target.value)} type="text"  placeholder='Search courses, topics...' className='h-full min-w-0 flex-1 bg-transparent px-2 text-sm text-slate-700 outline-none placeholder:text-slate-400 sm:px-3'  />
+         <button type='submit' className='rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 sm:px-5' >Search</button>
        </form>
     
   )

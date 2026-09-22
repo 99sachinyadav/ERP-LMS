@@ -1,16 +1,64 @@
 import Course from "../model/course.js"
+import crypto from 'node:crypto'
 import { CourseProgress } from "../model/courseprogress.js"
-import { Purchase } from "../model/purchase.js"
 import User from "../model/User.js"
-import Stripe from 'stripe'
-import { GoogleGenerativeAI } from "@google/generative-ai"
 import { v2 as cloudinary } from "cloudinary"
+import { comparePassword, createAuthToken, hashPassword } from "../mddelware/localAuth.js"
+
+const publicUser = (user) => ({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    imageUrl: user.imageUrl,
+    role: user.role,
+    enrolledCourses: user.enrolledCourses,
+})
+
+export const registerUser = async (req, res) => {
+    try {
+        const { name, email, password } = req.body
+        if (!name || !email || !password || String(password).length < 6) {
+            return res.json({ success: false, message: 'Name, email and 6+ character password are required' })
+        }
+
+        const normalizedEmail = String(email).trim().toLowerCase()
+        const existingUser = await User.findOne({ email: normalizedEmail })
+        if (existingUser) {
+            return res.json({ success: false, message: 'Email is already registered' })
+        }
+
+        const passwordHash = await hashPassword(password)
+        const user = await User.create({
+            _id: `user_${crypto.randomUUID()}`,
+            name: String(name).trim(),
+            email: normalizedEmail,
+            passwordHash,
+            imageUrl: '',
+        })
+
+        res.json({ success: true, token: createAuthToken(user), user: publicUser(user) })
+    } catch (error) {
+        res.json({ success: false, message: error.message })
+    }
+}
+
+export const loginUser = async (req, res) => {
+    try {
+        const { email, password } = req.body
+        const user = await User.findOne({ email: String(email || '').trim().toLowerCase() }).select('+passwordHash')
+        if (!user || !(await comparePassword(password, user.passwordHash))) {
+            return res.json({ success: false, message: 'Invalid email or password' })
+        }
+
+        res.json({ success: true, token: createAuthToken(user), user: publicUser(user) })
+    } catch (error) {
+        res.json({ success: false, message: error.message })
+    }
+}
 
 export  const getUserdata = async(req,res)=>{
     try {
-        const userId = req.auth.userId
-
-        const user = await User.findById(userId)
+        const user = await User.findById(req.auth.userId)
         if(!user){
             return res.json({success:false,message:'User Not Found'})
         }
@@ -24,10 +72,8 @@ export  const getUserdata = async(req,res)=>{
 // User Enrolled Courses  with lecture link
  export const getuserEnrolledCourses = async(req,res)=>{
     try {
-  const userId = req.auth.userId
-
+        const { userId } = req.auth
         const userdata = await User.findById(userId).populate('enrolledCourses')
-        console.log(userdata.  enrolledCourses.length)
 
         res.json({success:true ,enrolledCourses:userdata})
         
@@ -38,62 +84,33 @@ export  const getUserdata = async(req,res)=>{
 
 
 
- // FUNCTION TO PURCHASE COURSE
-
-export const purchaseCourse = async(req,res)=>{
+ // FUNCTION TO ENROLL IN COURSE
+export const enrollCourse = async(req,res)=>{
        try {
         const {courseId} = req.body
 
-        const {origin}=req.headers
         const userId = req.auth.userId
         const userData = await User.findById(userId)
         const courseData = await Course.findById(courseId)
         if(!userData || !courseData){
             return res.json({success:false,message:'Invalid Course or User'})
         }
-        const purchasedata ={
-            courseId : courseData._id,
-            userId,
-            amount:(courseData.coursePrice -courseData.discount*courseData.coursePrice/100).toFixed(2),
-
+        if (userData.enrolledCourses.some((id) => id.toString() === courseData._id.toString())) {
+            return res.json({success:true,message:'Already enrolled',courseId:courseData._id})
         }
 
-            const newPurchase = await Purchase.create(purchasedata)
-            // Stripe Payment Integration can be done here and after successful payment 
-            // we can add course to user enrolled courses and add user to course enrolled students
+        userData.enrolledCourses.push(courseData._id)
+        courseData.enrolledStudents.push(userData._id)
+        await userData.save()
+        await courseData.save()
 
-            const stripeinstance = new Stripe(process.env.STRIPE_SECRETE_KEY)
-            const currency = process.env.CURRENCY.toLowerCase()
-            //   Creating line items to for stripe
-
-            const line_items = [
-                {
-                    price_data:{
-                    currency,
-                    product_data:{
-                        name:courseData.courseTitle,
-                    },
-                    unit_amount:Math.floor(newPurchase.amount )*100,
-                },
-                quantity:1,
-                }
-            ]
-
-            const session = await stripeinstance.checkout.sessions.create({
-                success_url:`${origin}/loading/my-enrollments`,
-                cancel_url:`${origin}/`,
-                line_items:line_items,
-                mode:'payment',
-                metadata:{
-                    purchaseId:newPurchase._id.toString(),
-                }
-            })
-            // console.log(session.url)
-            res.json({success:true,session_url:session.url})
+        res.json({success:true,message:'Enrolled successfully',courseId:courseData._id})
        } catch (error) {
-           res.json({success:false,message:error.message    })
+           res.json({success:false,message:error.message})
        }
 }
+
+export const purchaseCourse = enrollCourse;
 
 
 // Update User Course Progress
@@ -165,7 +182,7 @@ export const addUserRating = async(req,res)=>{
 
         const user = await User.findById(userId)
         if(!user || !user.enrolledCourses.includes(courseId)){
-             return res.json({success:false,message:"User has not purchased this course"})
+             return res.json({success:false,message:"User is not enrolled in this course"})
         }
 
         const existingRatingIndex= course.courseRating.findIndex(r=>r.userId===userId)
@@ -185,87 +202,6 @@ export const addUserRating = async(req,res)=>{
         res.json({success:false,message:error.message})
     }
 }
-
-let genAIClient = null;
-const getGenAIClient = () => {
-  if (genAIClient) return genAIClient;
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  genAIClient = new GoogleGenerativeAI(apiKey);
-  return genAIClient;
-};
-
-// AI chat for debugging and study help
-export const aiChat = async (req, res) => {
-    try {
-        const userId = req.auth.userId;
-        if (!userId) {
-            return res.json({ success: false, message: "Unauthorized" });
-        }
-
-        const client = getGenAIClient();
-        if (!client) {
-            return res.json({
-                success: false,
-                message:
-                    "GEMINI_API_KEY is not set in the backend environment. Please add it to your .env and restart the server.",
-            });
-        }
-
-        const { message, code, language, courseId } = req.body || {};
-        if (!message || !String(message).trim()) {
-            return res.json({ success: false, message: "Message is required" });
-        }
-
-        let attachmentInfo = "";
-        if (req.file) {
-            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
-                resource_type: "auto",
-                folder: "lms-ai-attachments",
-            });
-            attachmentInfo = `\nThe user also attached a file for reference: ${uploadResult.secure_url}\n`;
-        }
-
-        const systemPrompt = `
-You are an AI tutor inside a   platform (LMS).
-Your purpose:
-- you have to also give the answer related to anything related to study in any field 
--if anyone give you a pdf then give the answer according to the question of student based on pdf or ducument uploaded
-- Help students debug code in a supportive way.
-- Explain programming concepts related to the course.
-- Give step-by-step hints instead of just full solutions when possible.
-- if a student still ask for solution then give a code solution
--give the solution in the student  desired programing language
--and talk to student in the language in which student is talking to you
-- Stay on study/programming topics only; give the crisp and consise but full answer politely decline unrelated questions.`;
-
-        const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-        const contents = [
-            {
-                role: "user",
-                parts: [
-                    { text: systemPrompt },
-                    {
-                        text:
-                            `User message:\n${String(message).trim()}\n\n` +
-                            (language ? `Language: ${language}\n` : "") +
-                            (code ? `Code:\n${code}\n\n` : "") +
-                            (courseId ? `CourseId: ${courseId}\n` : "") +
-                            attachmentInfo,
-                    },
-                ],
-            },
-        ];
-
-        const result = await model.generateContent({ contents });
-        const replyText = result?.response?.text?.() || "I couldn't generate a response.";
-
-        return res.json({ success: true, reply: replyText });
-    } catch (error) {
-        return res.json({ success: false, message: error.message });
-    }
-};
 
 // Run code for a programming question with custom stdin/stdout (compiler mode)
 export const runProgrammingQuestion = async (req, res) => {

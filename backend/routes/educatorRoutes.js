@@ -1,15 +1,16 @@
 import express from 'express'
 import { addChapterToCourse, addCourse, addLectureToCourse, addProgrammingQuestionToCourse, educatordashboarddata, getEducatorCourseById, geteducatorCourses, getEnrolledStudentsData, removeProgrammingQuestionFromCourse, updateCourseThumbnail, updateLectureInCourse, updateRoleToEducator, uploadLectureNotes } from '../controller/educatorcontroller.js'
-import upload from '../config/multer.js'
-import { protectEducator } from '../mddelware/authMiddelware.js'
+import upload, { uploadNotesMiddleware } from '../config/multer.js'
+import { protectEducator, requireAuth } from '../mddelware/localAuth.js'
 
 
 const educatorRouter  = express.Router()
 
 
-educatorRouter.get('/update-role',updateRoleToEducator)
+educatorRouter.post('/update-role', requireAuth, updateRoleToEducator)
+educatorRouter.get('/update-role', requireAuth, updateRoleToEducator)
 educatorRouter.post('/add-course',upload.single('image'), protectEducator,addCourse)
-educatorRouter.post('/upload-notes',upload.single('notesFile'), protectEducator, uploadLectureNotes)
+educatorRouter.post('/upload-notes', protectEducator, uploadNotesMiddleware, uploadLectureNotes)
 educatorRouter.get('/course/:id', protectEducator, getEducatorCourseById)
 educatorRouter.post('/course/:courseId/chapters', protectEducator, addChapterToCourse)
 educatorRouter.post('/course/:courseId/lectures', protectEducator, addLectureToCourse)

@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.60.2",
     "axios": "^1.13.6",
     "humanize-duration": "^3.33.2",
     "quill": "^2.0.3",

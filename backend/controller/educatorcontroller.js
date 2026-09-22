@@ -1,24 +1,62 @@
-import {clerkClient} from '@clerk/express'
 import Course from '../model/course.js';
 import {v2 as cloudinary} from 'cloudinary';
-import { Purchase } from '../model/purchase.js';
 import User from '../model/User.js';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
  
 // update role to educator 
 export const updateRoleToEducator = async (req,res)=>{
     try {
         const userId = req.auth.userId;
+        const rawInput = (
+            req.body?.educatorId || 
+            req.body?.educatorKey || 
+            req.query?.educatorId || 
+            req.query?.educatorKey || 
+            ''
+        ).toString().trim();
 
-        await clerkClient.users.updateUserMetadata(userId,{
-              publicMetadata:{
-                role:'educator',
-              }
-        })
-        res.json({sucess:true,message:'You can publish a course now'})
+        const expectedEducatorId = (
+            process.env.EDUCATOR_SECRET_ID || 
+            process.env.EDUCATOR_ID || 
+            process.env.EDUCATOR_SECRET_KEY || 
+            'EDUCATOR_2026'
+        ).toString().trim();
+
+        console.log(`[Educator Auth] User: ${userId} | Received: "${rawInput}" | Expected: "${expectedEducatorId}"`);
+
+        if (!rawInput) {
+            return res.json({
+                sucess: false,
+                success: false,
+                message: 'Educator ID is required to become an educator'
+            });
+        }
+
+        const normalize = (str) => String(str).replace(/^["']|["']$/g, '').trim().toLowerCase();
+
+        if (normalize(rawInput) !== normalize(expectedEducatorId)) {
+            return res.json({
+                sucess: false,
+                success: false,
+                message: 'Invalid Educator ID. Please check the ID in backend .env (EDUCATOR_SECRET_ID).'
+            });
+        }
+
+        await User.findByIdAndUpdate(userId, { role: 'educator' });
+        req.user.role = 'educator';
+        res.json({
+            sucess: true,
+            success: true,
+            message: 'Verification successful! You can publish courses now.'
+        });
         
     } catch (error) {
-        res.json({sucess:false,message:error.message})
+        res.json({
+            sucess: false,
+            success: false,
+            message: error.message
+        });
     }
 }
 
@@ -83,16 +121,34 @@ export const uploadLectureNotes = async (req, res) => {
     try {
         const notesFile = req.file;
         if (!notesFile) {
-            return res.json({ success: false, message: 'Notes file not attached' });
+            return res.status(400).json({ success: false, message: 'Notes file not attached' });
         }
+
+        const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB limit
+        if (notesFile.size > MAX_FILE_SIZE) {
+            if (notesFile.path && fs.existsSync(notesFile.path)) {
+                try { fs.unlinkSync(notesFile.path); } catch (e) {}
+            }
+            return res.status(400).json({ success: false, message: 'Notes file size cannot exceed 2 MB' });
+        }
+
         const uploadResult = await cloudinary.uploader.upload(notesFile.path, {
             resource_type: 'raw',
             folder: 'lms-lecture-notes',
-            formate:"pdf",
+            formate: "pdf",
         });
+
+        // Clean up temporary local file
+        if (notesFile.path && fs.existsSync(notesFile.path)) {
+            try { fs.unlinkSync(notesFile.path); } catch (e) {}
+        }
+
         res.json({ success: true, url: uploadResult.secure_url });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        if (req.file?.path && fs.existsSync(req.file.path)) {
+            try { fs.unlinkSync(req.file.path); } catch (e) {}
+        }
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
@@ -378,72 +434,64 @@ export const  geteducatorCourses = async(req,res)=>{
 
 export const educatordashboarddata = async(req,res)=>{
     try {
-        const educator= req.auth.userId;
-        const courses = await Course.find({educator})
+        const educator = req.auth.userId;
+        const courses = await Course.find({educator});
         const totalCourses = courses.length;
-        const courseIds= courses.map((course)=>course._id);
-        // calculate total earning
 
-        const purchases = await Purchase.find({
-            courseId:{$in:courseIds},
-            status:'completed'
-        })
-
-        const totalearning = purchases.reduce((sum,purchase)=>sum+purchase.amount,0)
-
-        // Collect unique enrolled student Ids with their course titles
-
+        // Collect unique enrolled student details with course titles
         const enrolledStudentsData = [];
-         for(const course of courses){
-            const students = await User.find({
-                _id:{$in:course.enrolledStudents}
-            },'name imageUrl')
+        for(const course of courses){
+            if (Array.isArray(course.enrolledStudents) && course.enrolledStudents.length > 0) {
+                const students = await User.find({
+                    _id:{$in:course.enrolledStudents}
+                },'name imageUrl');
 
-            students.forEach(student =>{
-                enrolledStudentsData.push({
-                    courseTitle:course.courseTitle,
-                    student
-                })
-            })
-         }
+                students.forEach(student =>{
+                    enrolledStudentsData.push({
+                        courseTitle:course.courseTitle,
+                        student
+                    });
+                });
+            }
+        }
 
-         res.json({success:true,dashboardData:{
-            totalearning,enrolledStudentsData,totalCourses
-         }})
+        res.json({success:true,dashboardData:{
+            totalearning: 0,
+            enrolledStudentsData,
+            totalCourses
+        }});
     } catch (error) {
-        res.json({success:false,messge:error.message})
+        res.json({success:false,message:error.message});
     }
 }
 
-
-
-//   get enrolled students data with purchase data 
+// Get enrolled students data directly from Course and User models
 export const getEnrolledStudentsData = async (req,res)=>{
-
     try {
-           const educator= req.auth.userId;
-            const courses = await Course.find({educator})
-              const courseIds= courses.map((course)=>course._id);
-            //   console.log(courses)
+        const educator = req.auth.userId;
+        const courses = await Course.find({educator});
+        const enrolledStudents = [];
 
-              const purchases = await Purchase.find({
-                  courseId:{$in:courseIds},
-                  status:'completed'
-              }).populate('userId','name imageUrl').populate('courseId','courseTitle')
+        for(const course of courses){
+            if (Array.isArray(course.enrolledStudents) && course.enrolledStudents.length > 0) {
+                const students = await User.find({
+                    _id: { $in: course.enrolledStudents }
+                }, 'name imageUrl email createdAt');
 
+                students.forEach(student => {
+                    enrolledStudents.push({
+                        student,
+                        courseTitle: course.courseTitle,
+                        purchaseData: student.createdAt || course.createdAt || new Date()
+                    });
+                });
+            }
+        }
 
-            const enrolledStudents = purchases.map(purchase=>({
-                student: purchase.userId,
-                courseTitle:purchase.courseId.courseTitle,
-                purchaseData:purchase.createdAt
-            }));
-            console.log(enrolledStudents)
-            res.json({success:true,enrolledStudents})
-        
+        res.json({success:true,enrolledStudents});
     } catch (error) {
-         res.json({success:false,messge:error.message})
+        res.json({success:false,message:error.message});
     }
-
 }
 
 

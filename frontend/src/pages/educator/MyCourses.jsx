@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
 
 const MyCourses = () => {
-  const {currency ,backendUrl,  iseducator,getToken} = useContext(AppContext)
+  const { backendUrl, iseducator, getToken } = useContext(AppContext)
    const [courses,setCourses]=useState(null);
 
    const fetchEducatorCourses = async()=>{
@@ -38,7 +38,6 @@ const MyCourses = () => {
                   <thead className='text-gray-900 border-b border-gray-500/20 text-sm text-left'>
                     <tr>
                       <th className='px-4 py-3 font-semibold truncate'>All Courses</th>
-                      <th className='px-4 py-3 font-semibold truncate'>Earnings</th>
                       <th className='px-4 py-3 font-semibold truncate'>Students</th>
                       <th className='px-4 py-3 font-semibold truncate'>Published On</th>
                       <th className='px-4 py-3 font-semibold truncate'>Actions</th>
@@ -52,11 +51,6 @@ const MyCourses = () => {
                               <img src={course.courseThumbnail} alt="Course Image"  className='w-16'/>
                               <span className='truncate hidden md:block'>{course.courseTitle}</span>
                           </td>
-                          <td className='px-4 py-3'>
-                            {currency}{(Math.floor(course.enrolledStudents.length)*(course.coursePrice-course.discount* course.coursePrice/100)).toFixed(2)}
-
-                          </td>
-
                           <td className='px-4 py-3'>{course.enrolledStudents.length}</td>
                           <td   className='px-4 py-3'>
                             {new Date(course.createdAt).toLocaleDateString()}

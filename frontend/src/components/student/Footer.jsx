@@ -7,18 +7,40 @@ const Footer = () => {
         <div className='flex flex-col md:flex-row items-start px-8 md:px-0 justify-center gap-10 md:gap-20 py-10 border-b border-white/30'>
 
           <div className='flex flex-col md:items-start items-center w-full'>
+            <button
+                   type="button"
+               
+                   className="group flex min-w-0 items-center gap-3"
+                 >
+                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-blue-100 bg-blue-50 shadow-sm transition-shadow group-hover:shadow-md">
+                     <img
+                       src={assets.rkgitm_logo}
+                       alt="RKGITM logo"
+                       className="h-8 w-8 object-contain"
+                     />
+                   </span>
+                   <div className="flex flex-col items-start leading-tight">
+                     <span className="text-lg font-bold tracking-tight text-white sm:text-xl">
+                       LMS
+                     </span>
+                     <span className="hidden text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500 sm:block">
+                       Learning Management
+                     </span>
+                   </div>
+                 </button>
              <div className="flex items-center gap-3">
-               <div className="flex items-center justify-center w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-500 via-sky-500 to-cyan-400 text-white font-extrabold text-lg shadow-md">
+               {/* <div className="flex items-center justify-center w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-500 via-sky-500 to-cyan-400 text-white font-extrabold text-lg shadow-md">
                  S
-               </div>
-               <div className="flex flex-col items-start leading-tight">
+               </div> */}
+              
+               {/* <div className="flex flex-col items-start leading-tight">
                  <span className="text-xl font-bold tracking-tight text-white">
                    Sdemy
                  </span>
                  <span className="text-[11px] uppercase tracking-[0.2em] text-sky-300">
                    Learn · Build · Grow
                  </span>
-               </div>
+               </div> */}
              </div>
               <p className='mt-6 text-center md:text-left text-sm text-white/80'>Learn with confidence and build your future skills with industry experts and hands-on projects.</p>
           </div>

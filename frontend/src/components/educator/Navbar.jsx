@@ -1,35 +1,38 @@
-import React from 'react'
+import React, { useContext } from 'react'
 
-import { assets, dummyEducatorData } from '../../assets/assets'
-import {UserButton,useUser} from '@clerk/clerk-react'
+import { assets } from '../../assets/assets'
 import {Link} from 'react-router-dom'
+import { AppContext } from '../../context/AppContext'
 const Navbar = () => {
-  const educatorData = dummyEducatorData;
-  const {user} = useUser()
+  const {userData, logout} = useContext(AppContext)
   return (
     <div className='flex items-center justify-between px-4 md:px-8 border-b border-gray-500 py-3'>
      <Link to='/'>  
-      <button
-        type="button"
-        onClick={() => navigate("/")}
-        className="flex items-center gap-3 group"
-      >
-        <div className="flex items-center justify-center w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-500 via-sky-500 to-cyan-400 text-white font-extrabold text-lg shadow-md group-hover:scale-105 transition-transform">
-          S
-        </div>
-        <div className="flex flex-col items-start leading-tight">
-          <span className="text-xl font-bold tracking-tight text-slate-900">
-            Sdemy
-          </span>
-          <span className="text-[11px] uppercase tracking-[0.2em] text-sky-500 hidden sm:block">
-            Learn · Build · Grow
-          </span>
-        </div>
-      </button>
+     <button
+            type="button"
+            
+            className="group flex min-w-0 items-center gap-3"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-blue-100 bg-blue-50 shadow-sm transition-shadow group-hover:shadow-md">
+              <img
+                src={assets.rkgitm_logo}
+                alt="RKGITM logo"
+                className="h-8 w-8 object-contain"
+              />
+            </span>
+            <div className="flex flex-col items-start leading-tight">
+              <span className="text-lg font-bold tracking-tight text-slate-950 sm:text-xl">
+                LMS
+              </span>
+              <span className="hidden text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500 sm:block">
+                Learning Management
+              </span>
+            </div>
+          </button>
      </Link>
      <div className='flex items-center gap-5 text-gray-500 relative'>
-         <p>Hi! {user? user.fullName:'Developers'}</p>
-         {user? <UserButton/>:<img className='max-w-8' src={assets.profile_img}/>}
+         <p>Hi! {userData? userData.name:'Developers'}</p>
+         {userData? <button onClick={logout} className='text-sm text-blue-600'>Logout</button>:<img className='max-w-8' src={assets.profile_img}/>}
      </div>
     </div>
   )

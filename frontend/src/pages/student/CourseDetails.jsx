@@ -9,6 +9,16 @@ import YouTube from "react-youtube";
 import axios from "axios";
 import { toast } from "react-toastify";
 
+const getYouTubeId = (url) => {
+  if (!url) return "";
+  const match = String(url).match(
+    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/
+  );
+  if (match && match[1]) return match[1];
+  const cleaned = String(url).split("?")[0].split("/").pop();
+  return cleaned || "";
+};
+
 const CourseDetails = () => {
   const { id } = useParams();
   const [courseData, setcourseData] = useState(null);
@@ -21,10 +31,11 @@ const CourseDetails = () => {
     calculateChapterTime,
     calculateCourseDuration,
     calculateNoOfLectures,
-    currency,
      backendUrl,
     userData,
     getToken,
+    fetchUserEnrolledCources,
+    navigate,
   } = useContext(AppContext);
 
   const fetchCourseData = async () => {
@@ -54,13 +65,15 @@ const CourseDetails = () => {
           }
 
           const token = await getToken();
-          const {data} = await axios.post(backendUrl + '/api/user/purchase',{courseId:courseData._id},{headers:{
+          const {data} = await axios.post(backendUrl + '/api/user/enroll',{courseId:courseData._id},{headers:{
              Authorization:`Bearer ${token}`
           }})
 
           if(data.success){
-            const {session_url}=data
-            window.location.replace(session_url)
+            toast.success(data.message || "Enrolled successfully")
+            setisalreadyEnrolled(true)
+            await fetchUserEnrolledCources()
+            navigate('/my-enrollments')
           }
 
           else{
@@ -182,9 +195,7 @@ const CourseDetails = () => {
                                 <p
                                   onClick={() =>
                                     setplayerData({
-                                      videoId: lecture.lectureUrl
-                                        .split("/")
-                                        .pop(),
+                                      videoId: getYouTubeId(lecture.lectureUrl),
                                     })
                                   }
                                   className="text-blue-500 cursor-pointer"
@@ -223,15 +234,15 @@ const CourseDetails = () => {
         </div>
         {/* right column */}
         <div className="max-w-course-card z-10 shadow-custom-card rounded-t md:rounded-none overflow-hidden bg-white min-w-[300px]  sm:min-w-[420px]">
-          {playerData ? (
+          {playerData?.videoId ? (
             <YouTube
               videoId={playerData.videoId}
               opts={{ playerVars: { autoplay: 1 } }}
               iframeClassName="w-full aspect-video"
             />
-          ) : (
-            <img src={courseData.courseThumbnail} alt="" />
-          )}
+          ) : courseData?.courseThumbnail ? (
+            <img src={courseData.courseThumbnail} alt={courseData.courseTitle || "Course Thumbnail"} />
+          ) : null}
           <div className="p-5">
             <div className="flex items-center gap-2">
               <img
@@ -239,23 +250,12 @@ const CourseDetails = () => {
                 alt="time_left_clock_icon"
               />
               <p className="text-red-500">
-                <span className="font-medium">5 days left at this price!</span>
+                <span className="font-medium">Free enrollment available</span>
               </p>
             </div>
             <div className="flex gap-3 items-center pt-2">
-              <p className="text-gray-800 md:text-4xl text-2xl  font-semibold">
-                {currency}
-                {(
-                  courseData.coursePrice -
-                  (courseData.discount * courseData.coursePrice) / 100
-                ).toFixed(2)}
-              </p>
-              <p className="md:text-lg text-gray-500 line-through">
-                {currency}
-                {courseData.coursePrice}
-              </p>
-              <p className="md:text-lg text-gray-500">
-                {courseData.discount}% off
+              <p className="text-gray-800 md:text-4xl text-2xl font-semibold">
+                Free
               </p>
             </div>
 

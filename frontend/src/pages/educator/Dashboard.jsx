@@ -56,13 +56,13 @@ const Dashboard = () => {
                       <p className='text-base text-gray-500'>TotalCourses</p>
                     </div>
                 </div>
-                <div className='flex items-center gap-3 shadow-card border border-blue-500 p-4 w-56 rounded-md'>
+                {/* <div className='flex items-center gap-3 shadow-card border border-blue-500 p-4 w-56 rounded-md'>
                     <img src={assets.earning_icon} alt="patients_icon" />
                     <div>
                       <p className='text-2xl font-medium text-gray-600'>{currency}{Number(dashboardData.totalearning.toFixed(2))}</p>
                       <p className='text-base text-gray-500'>Total Earnings</p>
                     </div>
-                </div>
+                </div> */}
            </div>
     <div>
        <h2 className='pb-4 text-lg front-medium '> Latest Enrollments</h2>
@@ -82,8 +82,22 @@ const Dashboard = () => {
                    <tr key={index} className='border-b border-gray-500/20'>
                        <td className='px-4 py-3 text-center hidden sm:table-cell'>{index+1}</td>
                        <td className='md:px-4 px-2 py-3 flex items-center space-x-3'>
-                         <img src={item.student.imageUrl} alt="Profile"  className='w-9 h-9 rounded-full'/>
-                         <span className='truncate'>{item.student.name}</span>
+                         {item.student?.imageUrl ? (
+                           <img
+                             src={item.student.imageUrl}
+                             alt="Profile"
+                             onError={(e) => {
+                               e.currentTarget.onerror = null;
+                               e.currentTarget.src = assets.user_icon;
+                             }}
+                             className='w-9 h-9 rounded-full object-cover border border-slate-200 bg-slate-50'
+                           />
+                         ) : (
+                           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600">
+                             <img src={assets.user_icon} alt="Student" className="h-5 w-5 opacity-70" />
+                           </span>
+                         )}
+                         <span className='truncate'>{item.student?.name || "Student"}</span>
                        </td>
                        <td className='px-4 py-3 truncate'>{item.courseTitle}</td>
                    </tr>

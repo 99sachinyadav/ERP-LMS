@@ -1,19 +1,115 @@
 import React from 'react'
 import Hero from '../../components/student/Hero'
-import Companies from '../../components/student/Companies'
 import CourseSection from '../../components/student/CourseSection'
-import TestimonialsSection from '../../components/student/TestimonialsSection'
-import CallToAction from '../../components/student/CallToAction'
 import Footer from '../../components/student/Footer'
+import { assets } from '../../assets/assets'
 
 const Home = () => {
+  const features = [
+    {
+      title: 'Structured Learning',
+      description: 'Organized courses with clear lessons, chapters, and milestones.',
+      icon: 'M12 6v12m6-6H6',
+      color: 'bg-blue-100 text-blue-700',
+    },
+    {
+      title: 'Interactive Content',
+      description: 'Videos, quizzes, assignments, and practical exercises.',
+      icon: 'M8 7h8M8 12h8M8 17h5',
+      color: 'bg-emerald-100 text-emerald-700',
+    },
+    {
+      title: 'Get Certified',
+      description: 'Complete learning paths and showcase your skills.',
+      icon: 'M12 3l2.4 4.8 5.3.8-3.8 3.7.9 5.2L12 15l-4.8 2.5.9-5.2-3.8-3.7 5.3-.8L12 3z',
+      color: 'bg-amber-100 text-amber-700',
+    },
+    {
+      title: 'Learn Anywhere',
+      description: 'Access your courses on web and mobile devices.',
+      icon: 'M9 2h6a2 2 0 012 2v16a2 2 0 01-2 2H9a2 2 0 01-2-2V4a2 2 0 012-2zm3 17h.01',
+      color: 'bg-rose-100 text-rose-700',
+    },
+  ]
+  const teachers = [
+    {
+      name: 'Dr. Ananya Sharma',
+      role: 'Computer Science Faculty',
+      image: assets.profile_img_1,
+      description: 'Guides students through programming fundamentals, data structures, and project-based web development.',
+      tag: 'Web Development',
+    },
+    {
+      name: 'Prof. Rahul Verma',
+      role: 'AI & Data Science Mentor',
+      image: assets.profile_img_2,
+      description: 'Teaches practical Python, analytics, and machine learning concepts with industry-focused examples.',
+      tag: 'Data Science',
+    },
+    {
+      name: 'Ms. Priya Singh',
+      role: 'Cloud Computing Instructor',
+      image: assets.profile_img_3,
+      description: 'Helps learners understand cloud platforms, deployment workflows, and modern backend systems.',
+      tag: 'Cloud',
+    },
+    {
+      name: 'Mr. Amit Kumar',
+      role: 'Cybersecurity Trainer',
+      image: assets.profile_img,
+      description: 'Focuses on secure coding, network security, and hands-on cybersecurity practices for beginners.',
+      tag: 'Security',
+    },
+  ]
+
   return (
-    <div className='flex flex-col items-center space-y-7 text-center bg-gradient-to-b from-sky-50 via-white to-sky-50'>
+    <div className='min-h-screen bg-white text-slate-950'>
        <Hero/>
-       <Companies/>
+       <section className='w-full bg-white py-10 sm:py-12'>
+        <div className='mx-auto grid max-w-7xl gap-8 px-5 sm:grid-cols-2 sm:px-8 lg:grid-cols-4 lg:px-10'>
+          {features.map((feature) => (
+            <article key={feature.title} className='text-left'>
+              <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl sm:mb-5 sm:h-14 sm:w-14 ${feature.color}`}>
+                <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className='h-6 w-6 sm:h-7 sm:w-7'>
+                  <path d={feature.icon} />
+                </svg>
+              </div>
+              <h3 className='text-lg font-bold text-slate-950'>{feature.title}</h3>
+              <p className='mt-3 max-w-xs text-sm leading-6 text-slate-500'>{feature.description}</p>
+            </article>
+          ))}
+        </div>
+       </section>
        <CourseSection/>
-       <TestimonialsSection/>
-       <CallToAction/>
+       <section className='w-full bg-white py-12 sm:py-14 lg:py-16'>
+        <div className='mx-auto max-w-7xl px-5 text-left sm:px-8 lg:px-10'>
+          <div className='mb-8 max-w-2xl'>
+            <p className='text-xs font-semibold uppercase tracking-[0.18em] text-blue-700 sm:text-sm'>Faculty Spotlight</p>
+            <h2 className='mt-3 text-2xl font-bold text-slate-950 sm:text-3xl'>Popular Teachers</h2>
+            <p className='mt-3 text-sm leading-6 text-slate-500'>
+              Learn from experienced faculty members who combine academic clarity with practical, career-focused guidance.
+            </p>
+          </div>
+
+          <div className='grid gap-5 sm:grid-cols-2 xl:grid-cols-4'>
+            {teachers.map((teacher) => (
+              <article key={teacher.name} className='rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg'>
+                <div className='flex items-center gap-4'>
+                  <img src={teacher.image} alt={teacher.name} className='h-14 w-14 shrink-0 rounded-full object-cover ring-4 ring-blue-50 sm:h-16 sm:w-16' />
+                  <div className='min-w-0'>
+                    <h3 className='truncate text-base font-bold text-slate-950'>{teacher.name}</h3>
+                    <p className='mt-1 text-xs font-medium text-slate-500'>{teacher.role}</p>
+                  </div>
+                </div>
+                <p className='mt-5 text-sm leading-6 text-slate-600'>{teacher.description}</p>
+                <div className='mt-5 inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700'>
+                  {teacher.tag}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+       </section>
        <Footer/>
     </div>
   )

@@ -1,14 +1,13 @@
 import { createContext, useState } from "react";
-import { dummyCourses } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
 import humanizeDuration from "humanize-duration";
-import { useAuth, useUser } from "@clerk/clerk-react";
 import { useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 export const AppContext = createContext();
 
 export const AppContextProvider = (props) => {
+  const navigate = useNavigate();
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const currency = import.meta.env.VITE_CURRENCY;
@@ -16,8 +15,8 @@ export const AppContextProvider = (props) => {
   const [iseducator, setiseducator] = useState(false);
   const [enrolledCourses, setenrolledCourses] = useState([]);
   const [userData, setUserData] = useState(null)
-  const { getToken } = useAuth();
-  const { user } = useUser();
+  const [authToken, setAuthToken] = useState(() => localStorage.getItem("sdemy-token") || "");
+  const getToken = async () => authToken;
   //   Fetch all Courses
 
   const fetchAllCourses = async () => {
@@ -38,11 +37,9 @@ export const AppContextProvider = (props) => {
 //   fetch user data 
 
 const fetchuserdata = async()=>{
-       if(user.publicMetadata.role === 'educator'){
-              setiseducator(true)
-       }
        try {
               const token = await  getToken();
+              if (!token) return;
               const {data} = await axios.get(backendUrl + '/api/user/data',{
                      headers:{
                             Authorization:`Bearer ${token}`
@@ -52,6 +49,7 @@ const fetchuserdata = async()=>{
               //  console.log(data)
               if(data.success){
                      setUserData(data.user)
+                     setiseducator(data.user.role === 'educator')
               }
               else{
                      toast.error(data.message)
@@ -105,9 +103,10 @@ const fetchuserdata = async()=>{
 
   // fetch User Enrolled Courses
 
-  const fetchUserEnrolledCources = async () => {
+  const fetchUserEnrolledCources = async (sessionToken) => {
      try {
-        const token = await getToken();
+        const token = sessionToken || await getToken();
+        if (!token) return;
   
         const {data}= await axios.get(backendUrl +'/api/user/enrolled-courses',{
           headers:{
@@ -126,23 +125,53 @@ const fetchuserdata = async()=>{
         toast.error(error.message)
      }
   };
-  useState(() => {
+  useEffect(() => {
     fetchAllCourses();
     
   }, []);
 
-  const logToken = async () => {
-    console.log(await getToken());
+  const saveSession = (token, user) => {
+    localStorage.setItem("sdemy-token", token);
+    setAuthToken(token);
+    setUserData(user);
+    setiseducator(user.role === "educator");
+  };
+
+  const login = async (email, password) => {
+    const { data } = await axios.post(backendUrl + "/api/user/login", { email, password });
+    if (data.success) {
+      saveSession(data.token, data.user);
+      toast.success("Logged in successfully");
+      await fetchUserEnrolledCources(data.token);
+    }
+    return data;
+  };
+
+  const register = async (name, email, password) => {
+    const { data } = await axios.post(backendUrl + "/api/user/register", { name, email, password });
+    if (data.success) {
+      saveSession(data.token, data.user);
+      toast.success("Account created");
+      await fetchUserEnrolledCources(data.token);
+    }
+    return data;
+  };
+
+  const logout = () => {
+    localStorage.removeItem("sdemy-token");
+    setAuthToken("");
+    setUserData(null);
+    setiseducator(false);
+    setenrolledCourses([]);
+    navigate("/");
   };
 
   useEffect(() => {
-    if (user) {
-      
+    if (authToken) {
       fetchuserdata();
       fetchUserEnrolledCources();
     }
-  }, [user]);
-  const navigate = useNavigate();
+  }, [authToken]);
   const value = {
     currency,
     allCourses,
@@ -157,7 +186,7 @@ const fetchuserdata = async()=>{
     fetchUserEnrolledCources,
     backendUrl,
     userData,
-    setUserData,getToken,fetchAllCourses
+    setUserData,getToken,fetchAllCourses,login,register,logout,authToken,fetchuserdata
   };
 
   return (

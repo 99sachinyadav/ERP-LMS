@@ -5,7 +5,9 @@ const userSchema = new mongoose.Schema(
         _id:{type:String, required:true},
         name:{type:String, required:true},
         email:{type:String, required:true},
-        imageUrl:{type:String, required:true},
+        imageUrl:{type:String, default:''},
+        passwordHash:{type:String, required:true, select:false},
+        role:{type:String, enum:['student','educator'], default:'student'},
         enrolledCourses:
         [
             {
