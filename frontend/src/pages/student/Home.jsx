@@ -31,36 +31,36 @@ const Home = () => {
       color: 'bg-rose-100 text-rose-700',
     },
   ]
-  const teachers = [
-    {
-      name: 'Dr. Ananya Sharma',
-      role: 'Computer Science Faculty',
-      image: assets.profile_img_1,
-      description: 'Guides students through programming fundamentals, data structures, and project-based web development.',
-      tag: 'Web Development',
-    },
-    {
-      name: 'Prof. Rahul Verma',
-      role: 'AI & Data Science Mentor',
-      image: assets.profile_img_2,
-      description: 'Teaches practical Python, analytics, and machine learning concepts with industry-focused examples.',
-      tag: 'Data Science',
-    },
-    {
-      name: 'Ms. Priya Singh',
-      role: 'Cloud Computing Instructor',
-      image: assets.profile_img_3,
-      description: 'Helps learners understand cloud platforms, deployment workflows, and modern backend systems.',
-      tag: 'Cloud',
-    },
-    {
-      name: 'Mr. Amit Kumar',
-      role: 'Cybersecurity Trainer',
-      image: assets.profile_img,
-      description: 'Focuses on secure coding, network security, and hands-on cybersecurity practices for beginners.',
-      tag: 'Security',
-    },
-  ]
+ const teachers = [
+  {
+    name: 'Prof.(Dr.) Rakesh Goel',
+    role: 'Maths Faculty',
+    image: assets.Director,
+    description: 'Prof. Rakesh Goel, a postgraduate from IIT Kanpur, has 26 years of Government of India experience, including 21 years in N.I.C., Uttar Pradesh. He joined RKGITM in 2008 after taking V.R.S. and received the President’s Medal in 1991. ',
+    tag: 'Director, RKGITM',
+  },
+  {
+    name: 'Dr. Manorma Sharma',
+    role: 'Chemistry Faculty',
+    image: assets.Dean,
+    description: 'Dr. Manorma Sharma holds an M.Sc. in Organic Chemistry & Ph.D. in Biochemistry from LLRM Medical College. Associated with RKG Group since 2000,she has over 27 years of teaching experience & has served in various academic ,administrative roles.',
+    tag: 'Dean Academics, RKGITM',
+  },
+  {
+    name: 'Ms. Nidhi Garg',
+    role: 'Computer Network Faculty',
+    image: assets.Nidhi,
+    description: 'Ms. Nidhi Garg is an accomplished academician with 23 years of experience in education. She has 12+ research papers and 2 patents to her credit and actively promotes research, innovation, and holistic student development.',
+    tag: 'HOD CSE',
+  },
+  {
+    name: 'Mr. Sandeep Singh',
+    role: 'Electrical Engineering Faculty',
+    image: assets.Sandeep,
+    description: 'Mr. Sandeep Singh has extensive experience in teaching, research, and academic administration in Electronics & Communication Engineering. He is committed to student development, academic excellence, and strengthening the ECE department.',
+    tag: 'HOD ECE',
+  },
+];
 
   return (
     <div className='min-h-screen bg-white text-slate-950'>

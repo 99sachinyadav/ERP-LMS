@@ -45,6 +45,10 @@ import lesson_icon from './lesson_icon.svg'
 import AI  from './AI.png'
 import AI2 from './AI2.png'
 import rkgitm_logo from './image.png'
+import Dean from './Dean.png'
+import Director from './director.png'
+import Sandeep from './Sandeep.png'
+import Nidhi from './nidhi.png'
 
 
 export const assets = {
@@ -94,7 +98,11 @@ export const assets = {
     lesson_icon,
     AI,
     AI2,
-    rkgitm_logo
+    rkgitm_logo,
+    Dean,
+    Director,
+    Nidhi,
+    Sandeep
 }
 
 export const dummyEducatorData = {
@@ -111,21 +119,21 @@ export const dummyTestimonial = [
     {
         name: 'Donald Jackman',
         role: 'SWE 1 @ Amazon',
-        image: assets.profile_img_1,
+        image: assets.Director,
         rating: 5,
         feedback: 'I\'ve been using Imagify for nearly two years, primarily for Instagram, and it has been incredibly user-friendly, making my work much easier.',
     },
     {
         name: 'Richard Nelson',
         role: 'SWE 2 @ Samsung',
-        image: assets.profile_img_2,
+        image: assets.Dean,
         rating: 4,
         feedback: 'I\'ve been using Imagify for nearly two years, primarily for Instagram, and it has been incredibly user-friendly, making my work much easier.',
     },
     {
         name: 'James Washington',
         role: 'SWE 2 @ Google',
-        image: assets.profile_img_3,
+        image: assets.Nidhi,
         rating: 4.5,
         feedback: 'I\'ve been using Imagify for nearly two years, primarily for Instagram, and it has been incredibly user-friendly, making my work much easier.',
     },
